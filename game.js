@@ -95,6 +95,43 @@ function gameOver() {
     clearInterval(difficultyTimer);
 }
 
+// ペットボトルの形状を作成する関数
+function createBottleGeometry() {
+    const group = new THREE.Group();
+    
+    // ボトルの本体（円柱）
+    const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1, 16);
+    const bodyMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x87CEEB,  // 水色
+        transparent: true,
+        opacity: 0.8,     // 半透明
+        shininess: 100    // 光沢を強く
+    });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    group.add(body);
+    
+    // ボトルの首部分（細い円柱）
+    const neckGeometry = new THREE.CylinderGeometry(0.15, 0.2, 0.3, 16);
+    const neck = new THREE.Mesh(neckGeometry, bodyMaterial);
+    neck.position.y = 0.65;
+    group.add(neck);
+    
+    // キャップ部分
+    const capGeometry = new THREE.CylinderGeometry(0.17, 0.17, 0.1, 16);
+    const capMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x4169E1,  // 濃い青
+        shininess: 50
+    });
+    const cap = new THREE.Mesh(capGeometry, capMaterial);
+    cap.position.y = 0.85;
+    group.add(cap);
+    
+    // ボトル全体を少し傾ける
+    group.rotation.z = Math.PI * 0.1;  // 約18度傾ける
+    
+    return group;
+}
+
 // ゲームの初期化
 function init() {
     // シーンの作成
@@ -161,7 +198,12 @@ function shoot() {
     }
     
     const bulletGeometry = new THREE.SphereGeometry(0.1);
-    const bulletMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+    const bulletMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xf0f0f0,     // 明るい白色
+        emissive: 0x404040,  // 自己発光効果を追加
+        shininess: 100,      // 光沢を強く
+        specular: 0xffffff   // 反射光を白く
+    });
     const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
     bullet.position.copy(player.position);
     bullet.position.y += 0.25;
@@ -171,14 +213,59 @@ function shoot() {
     lastShootTime = currentTime;  // 発射時間を更新
 }
 
+// トマトの形状を作成する関数
+function createTomatoGeometry() {
+    const group = new THREE.Group();
+    
+    // トマトの本体（球体）
+    const tomatoGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+    const tomatoMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xff3b3b,  // より鮮やかな赤色
+        shininess: 100    // つやっぽい見た目に
+    });
+    const tomato = new THREE.Mesh(tomatoGeometry, tomatoMaterial);
+    group.add(tomato);
+    
+    // ヘタの中心部分（円錐）
+    const calyxBaseGeometry = new THREE.CylinderGeometry(0.2, 0.15, 0.1, 5);
+    const calyxMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 });
+    const calyxBase = new THREE.Mesh(calyxBaseGeometry, calyxMaterial);
+    calyxBase.position.y = 0.5;
+    group.add(calyxBase);
+    
+    // ヘタの葉（5枚）
+    const leafGeometry = new THREE.ConeGeometry(0.15, 0.2, 3);
+    const leafMaterial = new THREE.MeshPhongMaterial({ color: 0x228b22 });
+    
+    for (let i = 0; i < 5; i++) {
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+        leaf.position.y = 0.5;
+        leaf.rotation.y = (i * Math.PI * 2) / 5;  // 円周上に均等に配置
+        leaf.rotation.x = Math.PI / 3;  // 外側に傾ける
+        leaf.position.x = Math.sin(i * Math.PI * 2 / 5) * 0.2;
+        leaf.position.z = Math.cos(i * Math.PI * 2 / 5) * 0.2;
+        group.add(leaf);
+    }
+    
+    return group;
+}
+
 // 敵の生成
 function createEnemy() {
-    const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-    const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+    const enemy = createTomatoGeometry();
     enemy.position.z = -30;
-    enemy.position.x = Math.random() * 10 - 5;  // -5から5の範囲
-    enemy.position.y = Math.random() * 5;       // 0から5の範囲
+    enemy.position.x = Math.random() * 10 - 5;
+    enemy.position.y = Math.random() * 5;
+    
+    // 回転速度を設定
+    enemy.userData = {
+        rotationSpeed: {
+            x: (Math.random() - 0.5) * 0.05,  // -0.025から0.025の範囲
+            y: (Math.random() - 0.5) * 0.05,
+            z: (Math.random() - 0.5) * 0.05
+        }
+    };
+    
     scene.add(enemy);
     enemies.push(enemy);
 }
@@ -211,6 +298,12 @@ function update() {
     for (let i = enemies.length - 1; i >= 0; i--) {
         enemies[i].position.z += 0.2;
         
+        // 3軸での回転を適用
+        const speed = enemies[i].userData.rotationSpeed;
+        enemies[i].rotation.x += speed.x;
+        enemies[i].rotation.y += speed.y;
+        enemies[i].rotation.z += speed.z;
+        
         // プレイヤーとの衝突判定（無敵時間中は無視）
         if (!isInvincible && player.position.distanceTo(enemies[i].position) < 1) {
             scene.remove(enemies[i]);
@@ -223,7 +316,6 @@ function update() {
                 return;
             }
             
-            // 無敵モード開始
             startInvincibility();
             continue;
         }
