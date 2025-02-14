@@ -1,0 +1,63 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+#game-ui {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+}
+
+#score, #life {
+    color: white;
+    font-size: 24px;
+    font-family: Arial, sans-serif;
+    margin-bottom: 10px;
+}
+
+#game-over {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.game-over-content {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.game-over-content h1 {
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+#restartButton {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+} 
